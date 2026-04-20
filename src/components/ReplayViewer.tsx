@@ -1,0 +1,76 @@
+import { useCallback, useMemo, useState } from "react";
+import { useReplayPlayback } from "../hooks/useReplayPlayback";
+import type { ReplayStep } from "../types";
+import { Controls } from "./Controls";
+import { DetailPanel } from "./DetailPanel";
+import { FlowGraph } from "./FlowGraph";
+
+interface ReplayViewerProps {
+  /** Pre-parsed replay steps. Use a parser to convert raw logs first. */
+  steps: ReplayStep[];
+  /** Optional: container height (default "600px") */
+  height?: string | number;
+}
+
+/**
+ * Full replay viewer component.
+ * Combines FlowGraph, DetailPanel, and Controls into a single widget.
+ */
+export function ReplayViewer({ steps, height = "600px" }: ReplayViewerProps) {
+  const playback = useReplayPlayback(steps);
+  const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
+
+  const selectedStep = useMemo(
+    () => steps.find((s) => s.id === selectedStepId) ?? null,
+    [steps, selectedStepId],
+  );
+
+  const handleSelectStep = useCallback((id: string) => {
+    setSelectedStepId((prev) => (prev === id ? null : id));
+  }, []);
+
+  return (
+    <div style={{ ...containerStyle, height }}>
+      <div style={layoutStyle}>
+        <FlowGraph
+          steps={steps}
+          currentStepIndex={playback.currentStepIndex}
+          selectedStepId={selectedStepId}
+          onSelectStep={handleSelectStep}
+        />
+        <DetailPanel step={selectedStep} />
+      </div>
+      <Controls
+        currentStepIndex={playback.currentStepIndex}
+        totalSteps={steps.length}
+        isPlaying={playback.isPlaying}
+        speed={playback.speed}
+        play={playback.play}
+        pause={playback.pause}
+        stepForward={playback.stepForward}
+        stepBack={playback.stepBack}
+        seekTo={playback.seekTo}
+        setSpeed={playback.setSpeed}
+      />
+      {/* Inject keyframe animation for spinning status indicator */}
+      <style>{`@keyframes afr-spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+const containerStyle: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  overflow: "hidden",
+  border: "1px solid #e2e8f0",
+  borderRadius: 8,
+  background: "white",
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+};
+
+const layoutStyle: React.CSSProperties = {
+  flex: 1,
+  display: "flex",
+  overflow: "hidden",
+  minHeight: 0,
+};
