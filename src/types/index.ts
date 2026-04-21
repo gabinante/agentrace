@@ -1,5 +1,5 @@
 /**
- * Core types for agentic-flow-replay.
+ * Core types for agentrace.
  *
  * These types are framework-agnostic — any log format can be parsed into
  * ReplayStep[] via a parser function.

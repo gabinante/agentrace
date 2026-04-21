@@ -1,4 +1,4 @@
-# agentic-flow-replay
+# agentrace
 
 Turn agent logs into interactive flow visualizations. Framework-agnostic log parsing with React replay components.
 
@@ -7,11 +7,11 @@ Parse structured logs from any AI agent framework into a universal step format, 
 ## Quick Start
 
 ```bash
-npm install agentic-flow-replay
+npm install agentrace
 ```
 
 ```tsx
-import { FlowGraph, useReplayPlayback, parseOTelSpans } from "agentic-flow-replay";
+import { FlowGraph, useReplayPlayback, parseOTelSpans } from "agentrace";
 
 function AgentReplay({ spans }) {
   const steps = parseOTelSpans(spans);
@@ -57,7 +57,7 @@ The recommended path for most teams. Accepts OTel spans and automatically detect
 - **Parent-child relationships** for parallel execution detection
 
 ```tsx
-import { parseOTelSpans, parseOTLPExport } from "agentic-flow-replay";
+import { parseOTelSpans, parseOTLPExport } from "agentrace";
 
 // From flat spans (Jaeger, custom collector, Langtrace export)
 const steps = parseOTelSpans(spans);
@@ -88,7 +88,7 @@ const steps = parseOTelSpans(spans, {
 For custom structured logs. Accepts any JSON with a `timestamp` field:
 
 ```tsx
-import { parseGenericJsonLogs } from "agentic-flow-replay";
+import { parseGenericJsonLogs } from "agentrace";
 
 const steps = parseGenericJsonLogs([
   {
@@ -126,7 +126,7 @@ const steps = parseGenericJsonLogs([
 Implement a function that returns `ReplayStep[]`:
 
 ```tsx
-import type { ReplayStep } from "agentic-flow-replay";
+import type { ReplayStep } from "agentrace";
 
 function parseMyLogs(logs: MyLogEntry[]): ReplayStep[] {
   return logs.map((log, i) => ({
@@ -188,7 +188,7 @@ The default view shows the entire trace. Pressing play replays from the beginnin
 All-in-one component that combines FlowGraph, DetailPanel, and Controls:
 
 ```tsx
-import { ReplayViewer } from "agentic-flow-replay";
+import { ReplayViewer } from "agentrace";
 
 <ReplayViewer steps={steps} />
 ```
@@ -198,7 +198,7 @@ import { ReplayViewer } from "agentic-flow-replay";
 Available separately for custom layouts:
 
 ```tsx
-import { DetailPanel, Controls } from "agentic-flow-replay";
+import { DetailPanel, Controls } from "agentrace";
 ```
 
 ## Theming
@@ -298,8 +298,8 @@ log_step("tool_call", "Tool: search", name="vector_search", status="completed", 
 ## Development
 
 ```bash
-git clone https://github.com/gabinante/agentic-flow-replay
-cd agentic-flow-replay
+git clone https://github.com/gabinante/agentrace
+cd agentrace
 npm install
 npm run dev    # Opens demo at localhost:5173
 ```

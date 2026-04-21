@@ -1,5 +1,5 @@
 {
-  "name": "agentic-flow-replay",
+  "name": "agentrace",
   "version": "0.1.0",
   "description": "Turn agent logs into interactive flow visualizations. Framework-agnostic log parsing with React replay components.",
   "type": "module",
@@ -43,7 +43,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gabinante/agentic-flow-replay"
+    "url": "https://github.com/gabinante/agentrace"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
