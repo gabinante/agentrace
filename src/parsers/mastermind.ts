@@ -2,7 +2,7 @@
  * Parser for Mastermind-style debug events (SSE stream format).
  *
  * This is the reference parser — it transforms the event format used by
- * Woflow's Mastermind agent orchestrator into ReplayStep[].
+ * the Mastermind agent orchestrator into ReplayStep[].
  */
 import type { ReplayStep, ReplayStepType } from "../types";
 import { detectParallelGroups } from "../utils/detectParallelGroups";
@@ -155,9 +155,108 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
   const pendingSkills = new Map<string, number>();
   const pendingKnowledge = new Map<string, number>();
 
+  // ── Agent context accumulator ──
+  // Builds a rolling snapshot of the agent's state at each point in time.
+  // Every step gets a full `agent_context` object attached to its detail.
+  let currentTurnId: string | null = null;
+  let executionId: string | null = null;
+  let userMessage: string | null = null;
+  let activeStage: { name: string; goal?: string } | null = null;
+  let lastLlm: {
+    model: string;
+    prompt?: string;
+    reasoning?: string;
+    tool_calls_requested?: number;
+  } | null = null;
+  // Per-turn running tallies
+  let turnLlmCalls = 0;
+  let turnToolCalls = 0;
+  let turnSkillCalls = 0;
+
+  // Agent-level context (set once from agent_initialized, persists across turns)
+  let systemPrompt: string | null = null;
+  let availableTools: Array<Record<string, unknown>> | null = null;
+  let agentConfig: Record<string, unknown> | null = null;
+  // Conversation history accumulator
+  const conversationHistory: Array<{ role: string; content: string; timestamp: string }> = [];
+
+  /** Snapshot the current agent context as a detail object */
+  function agentContext(): Record<string, unknown> {
+    const ctx: Record<string, unknown> = {};
+    if (executionId) ctx.execution_id = executionId;
+    if (currentTurnId) ctx.turn_id = currentTurnId;
+    if (systemPrompt) ctx.system_prompt = systemPrompt;
+    if (availableTools) ctx.available_tools = availableTools;
+    if (agentConfig) ctx.agent_config = agentConfig;
+    if (userMessage) ctx.user_message = userMessage;
+    if (conversationHistory.length > 0) {
+      // Include last 10 messages to keep context manageable
+      ctx.conversation_history = conversationHistory.slice(-10);
+    }
+    if (activeStage) {
+      ctx.active_stage = activeStage.name;
+      if (activeStage.goal) ctx.stage_goal = activeStage.goal;
+    }
+    if (lastLlm) {
+      ctx.llm_model = lastLlm.model;
+      if (lastLlm.prompt) ctx.llm_prompt = lastLlm.prompt;
+      if (lastLlm.reasoning) ctx.llm_reasoning = lastLlm.reasoning;
+      if (lastLlm.tool_calls_requested !== undefined)
+        ctx.llm_tool_calls_requested = lastLlm.tool_calls_requested;
+    }
+    ctx.turn_llm_calls = turnLlmCalls;
+    ctx.turn_tool_calls = turnToolCalls;
+    ctx.turn_skill_calls = turnSkillCalls;
+    return ctx;
+  }
+
   for (const event of sorted) {
+    // Track turn/execution boundaries
+    if ("execution_id" in event && event.execution_id) {
+      executionId = event.execution_id;
+    }
+    if ("turn_id" in event && event.turn_id && event.turn_id !== currentTurnId) {
+      currentTurnId = event.turn_id;
+      // Reset per-turn tallies on new turn
+      turnLlmCalls = 0;
+      turnToolCalls = 0;
+      turnSkillCalls = 0;
+      lastLlm = null;
+    }
+
     switch (event.type) {
+      case "agent_initialized": {
+        // Extract agent-level config that persists across all turns
+        if (event.system_prompt) systemPrompt = event.system_prompt as string;
+        if (event.available_tools)
+          availableTools = event.available_tools as Array<Record<string, unknown>>;
+        if (event.config) agentConfig = event.config as Record<string, unknown>;
+        steps.push({
+          id: `init-${event.timestamp}`,
+          type: "state_change",
+          label: "Agent Initialized",
+          timestamp: event.timestamp,
+          status: "completed",
+          detail: {
+            system_prompt: systemPrompt,
+            available_tools: availableTools,
+            config: agentConfig,
+            agent_context: agentContext(),
+          },
+        });
+        break;
+      }
+
       case "message_received": {
+        userMessage = event.content_preview ?? null;
+        // Track in conversation history
+        if (event.content_preview) {
+          conversationHistory.push({
+            role: "user",
+            content: event.content_preview,
+            timestamp: event.timestamp,
+          });
+        }
         steps.push({
           id: `msg-${event.timestamp}`,
           type: "user_message",
@@ -168,6 +267,7 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
             surface: event.surface,
             content_type: event.content_type,
             content_preview: event.content_preview,
+            agent_context: agentContext(),
           },
         });
         break;
@@ -186,12 +286,15 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
             confidence: event.classification.confidence,
             needs_research: event.classification.needs_research,
             is_fast_path: event.classification.is_fast_path,
+            agent_context: agentContext(),
           },
         });
         break;
       }
 
       case "brain_stage_started": {
+        activeStage = { name: event.stage, goal: event.input_summary };
+        lastLlm = null; // reset LLM context for new stage
         steps.push({
           id: `stage-${event.stage}-${event.timestamp}`,
           type: "stage_transition",
@@ -202,6 +305,7 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
           detail: {
             stage: event.stage,
             input_summary: event.input_summary,
+            agent_context: agentContext(),
           },
         });
         break;
@@ -218,11 +322,17 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
           steps[startIdx].status = "completed";
           steps[startIdx].durationMs = event.duration_ms;
           steps[startIdx].detail.output_summary = event.output_summary;
+          // Update the context snapshot with final tallies
+          steps[startIdx].detail.agent_context = agentContext();
+        }
+        if (activeStage?.name === event.stage) {
+          activeStage = null;
         }
         break;
       }
 
       case "llm_request_started": {
+        turnLlmCalls++;
         const key = `${event.stage}-${event.model}`;
         const idx = steps.length;
         steps.push({
@@ -237,6 +347,7 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
             prompt_summary: event.prompt_summary,
             tool_count: event.tool_count,
             stage: event.stage,
+            agent_context: agentContext(),
           },
         });
         pendingLlm.set(key, idx);
@@ -253,10 +364,22 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
           steps[idx].detail.response_summary = event.response_summary;
           pendingLlm.delete(key);
         }
+        // Update rolling LLM context
+        lastLlm = {
+          model: event.model,
+          prompt: idx !== undefined ? (steps[idx].detail.prompt_summary as string) : undefined,
+          reasoning: event.response_summary,
+          tool_calls_requested: event.tool_calls_count,
+        };
+        // Update step's context with reasoning
+        if (idx !== undefined) {
+          steps[idx].detail.agent_context = agentContext();
+        }
         break;
       }
 
       case "tool_triggered": {
+        turnToolCalls++;
         const idx = steps.length;
         steps.push({
           id: `tool-${event.run_id}`,
@@ -269,6 +392,7 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
             name: event.tool_name,
             run_id: event.run_id,
             inputs: event.inputs,
+            agent_context: agentContext(),
           },
         });
         pendingTools.set(event.run_id, idx);
@@ -289,6 +413,7 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
       }
 
       case "skill_triggered": {
+        turnSkillCalls++;
         const idx = steps.length;
         steps.push({
           id: `skill-${event.run_id}`,
@@ -303,6 +428,7 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
             run_id: event.run_id,
             inputs: event.inputs,
             invocation_mode: event.invocation_mode,
+            agent_context: agentContext(),
           },
         });
         pendingSkills.set(event.run_id, idx);
@@ -335,6 +461,7 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
             query: event.query,
             agent_id: event.agent_id,
             top_k: event.top_k,
+            agent_context: agentContext(),
           },
         });
         pendingKnowledge.set(event.query, idx);
@@ -355,6 +482,12 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
       }
 
       case "response_generated": {
+        // Track in conversation history
+        conversationHistory.push({
+          role: "assistant",
+          content: `[Response: ${event.text_length} chars]`,
+          timestamp: event.timestamp,
+        });
         steps.push({
           id: `response-${event.timestamp}`,
           type: "response",
@@ -366,6 +499,7 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
             has_surface_actions: event.has_surface_actions,
             triggered_skills_count: event.triggered_skills_count,
             auto_generated: event.auto_generated,
+            agent_context: agentContext(),
           },
         });
         break;
@@ -385,6 +519,7 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
             recoverable: event.recoverable,
             stage: event.stage,
             skill_name: event.skill_name,
+            agent_context: agentContext(),
           },
         });
         break;
@@ -401,6 +536,7 @@ export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
             from: event.from,
             to: event.to,
             reason: event.reason,
+            agent_context: agentContext(),
           },
         });
         break;

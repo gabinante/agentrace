@@ -43,7 +43,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/woflowinc/agentic-flow-replay"
+    "url": "https://github.com/gabinante/agentic-flow-replay"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
@@ -53,6 +53,8 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",
+    "primereact": "^10.5.0",
+    "primeicons": "^7.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tsup": "^8.0.0",

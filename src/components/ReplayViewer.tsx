@@ -52,8 +52,17 @@ export function ReplayViewer({ steps, height = "600px" }: ReplayViewerProps) {
         seekTo={playback.seekTo}
         setSpeed={playback.setSpeed}
       />
-      {/* Inject keyframe animation for spinning status indicator */}
-      <style>{`@keyframes afr-spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes afr-spin { to { transform: rotate(360deg); } }
+        @keyframes afr-glow-pulse {
+          0%, 100% { box-shadow: 0 0 6px 2px var(--afr-glow-color, rgba(59,130,246,0.3)); }
+          50% { box-shadow: 0 0 14px 4px var(--afr-glow-color, rgba(59,130,246,0.5)); }
+        }
+        @keyframes afr-node-enter {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -62,9 +71,9 @@ const containerStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   overflow: "hidden",
-  border: "1px solid #e2e8f0",
+  border: "1px solid var(--afr-border, #e2e8f0)",
   borderRadius: 8,
-  background: "white",
+  background: "var(--afr-bg-primary, white)",
   fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 };
 

@@ -2,6 +2,101 @@
  * Sample Mastermind-style events for the demo.
  */
 export const sampleEvents = [
+  // Agent initialization — carries system prompt, tool catalog, and config
+  {
+    type: "agent_initialized",
+    execution_id: "exec-001",
+    timestamp: "2026-04-20T09:59:58.000Z",
+    system_prompt:
+      "You are a helpful assistant with access to real-time data tools. " +
+      "When users ask about weather, use the weather_lookup tool. " +
+      "For multi-city comparisons, make parallel tool calls to minimize latency. " +
+      "Always provide temperatures in the user's preferred units (default: Fahrenheit). " +
+      "If a tool call fails, retry once before falling back to cached data. " +
+      "Respond concisely with structured data when appropriate.",
+    available_tools: [
+      {
+        name: "weather_lookup",
+        description: "Fetch current weather conditions for a given location",
+        parameters: {
+          type: "object",
+          properties: {
+            location: {
+              type: "string",
+              description: "City name or coordinates (e.g., 'San Francisco, CA')",
+            },
+            units: {
+              type: "string",
+              enum: ["fahrenheit", "celsius"],
+              default: "fahrenheit",
+              description: "Temperature units",
+            },
+          },
+          required: ["location"],
+        },
+      },
+      {
+        name: "forecast_lookup",
+        description: "Fetch a multi-day weather forecast for a location",
+        parameters: {
+          type: "object",
+          properties: {
+            location: { type: "string", description: "City name or coordinates" },
+            days: { type: "number", description: "Number of forecast days (1-14)", default: 7 },
+          },
+          required: ["location"],
+        },
+      },
+      {
+        name: "geocode",
+        description: "Resolve a place name to latitude/longitude coordinates",
+        parameters: {
+          type: "object",
+          properties: {
+            query: { type: "string", description: "Place name or address" },
+          },
+          required: ["query"],
+        },
+      },
+      {
+        name: "alert_check",
+        description: "Check for active weather alerts in a region",
+        parameters: {
+          type: "object",
+          properties: {
+            location: { type: "string", description: "City or region name" },
+            severity: {
+              type: "string",
+              enum: ["all", "severe", "extreme"],
+              default: "all",
+            },
+          },
+          required: ["location"],
+        },
+      },
+      {
+        name: "historical_weather",
+        description: "Retrieve historical weather data for a date range",
+        parameters: {
+          type: "object",
+          properties: {
+            location: { type: "string" },
+            start_date: { type: "string", description: "ISO date (YYYY-MM-DD)" },
+            end_date: { type: "string", description: "ISO date (YYYY-MM-DD)" },
+          },
+          required: ["location", "start_date", "end_date"],
+        },
+      },
+    ],
+    config: {
+      model: "claude-sonnet-4-5-20250514",
+      max_turns: 10,
+      max_tool_retries: 1,
+      parallel_tool_calls: true,
+      temperature: 0.3,
+      max_tokens: 4096,
+    },
+  },
   {
     type: "message_received",
     execution_id: "exec-001",

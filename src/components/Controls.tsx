@@ -79,8 +79,8 @@ const controlsStyle: React.CSSProperties = {
   alignItems: "center",
   gap: 12,
   padding: "10px 16px",
-  borderTop: "1px solid #e2e8f0",
-  background: "white",
+  borderTop: "1px solid var(--afr-border, #e2e8f0)",
+  background: "var(--afr-bg-primary, white)",
   flexShrink: 0,
 };
 
@@ -98,9 +98,9 @@ const transportBtnStyle: React.CSSProperties = {
   width: 28,
   height: 28,
   borderRadius: 6,
-  border: "1px solid #e2e8f0",
-  background: "white",
-  color: "#525a66",
+  border: "1px solid var(--afr-border, #e2e8f0)",
+  background: "var(--afr-bg-surface, white)",
+  color: "var(--afr-text-primary, #525a66)",
   cursor: "pointer",
   fontSize: 14,
 };
@@ -112,9 +112,9 @@ const playBtnStyle: React.CSSProperties = {
   width: 36,
   height: 36,
   borderRadius: "50%",
-  border: "1px solid #e2e8f0",
-  background: "#1d262c",
-  color: "white",
+  border: "1px solid var(--afr-border, #e2e8f0)",
+  background: "var(--afr-text-primary, #1d262c)",
+  color: "var(--afr-bg-primary, white)",
   cursor: "pointer",
   fontSize: 16,
 };
@@ -134,7 +134,7 @@ const scrubberStyle: React.CSSProperties = {
 const counterStyle: React.CSSProperties = {
   fontSize: 11,
   fontFamily: "ui-monospace, SFMono-Regular, monospace",
-  color: "#9ca3af",
+  color: "var(--afr-text-secondary, #9ca3af)",
   whiteSpace: "nowrap",
   flexShrink: 0,
   minWidth: 50,
@@ -152,13 +152,13 @@ const speedBtnStyle: React.CSSProperties = {
   borderRadius: 4,
   fontSize: 11,
   fontWeight: 500,
-  background: "#f1f5f9",
-  color: "#475569",
+  background: "var(--afr-bg-secondary, #f1f5f9)",
+  color: "var(--afr-text-secondary, #475569)",
   border: "1px solid transparent",
   cursor: "pointer",
 };
 
 const speedActiveStyle: React.CSSProperties = {
-  background: "#1d262c",
-  color: "white",
+  background: "var(--afr-text-primary, #1d262c)",
+  color: "var(--afr-bg-primary, white)",
 };

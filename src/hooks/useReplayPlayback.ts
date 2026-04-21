@@ -20,7 +20,9 @@ function clampDelay(ms: number): number {
 export function useReplayPlayback(
   steps: ReplayStep[],
 ): UseReplayPlaybackReturn {
-  const [currentStepIndex, setCurrentStepIndex] = useState(-1);
+  const [currentStepIndex, setCurrentStepIndex] = useState(
+    steps.length > 0 ? steps.length - 1 : -1,
+  );
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState<PlaybackSpeed>(1);
 
@@ -85,17 +87,13 @@ export function useReplayPlayback(
   useEffect(() => {
     clearTimer();
     setIsPlaying(false);
-    setCurrentStepIndex(-1);
+    setCurrentStepIndex(steps.length > 0 ? steps.length - 1 : -1);
   }, [steps, clearTimer]);
 
   const play = useCallback(() => {
-    if (currentRef.current >= stepsRef.current.length - 1) {
-      setCurrentStepIndex(0);
-      currentRef.current = 0;
-    } else if (currentRef.current < 0) {
-      setCurrentStepIndex(0);
-      currentRef.current = 0;
-    }
+    // Always replay from the beginning
+    setCurrentStepIndex(0);
+    currentRef.current = 0;
     setIsPlaying(true);
   }, []);
 

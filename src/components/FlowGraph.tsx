@@ -2,32 +2,55 @@ import { forwardRef, useEffect, useRef } from "react";
 import type { ReplayStep, ReplayStepType } from "../types";
 
 const DEFAULT_BORDER_COLORS: Record<ReplayStepType, string> = {
-  user_message: "#475569",
-  intent_classification: "#7c3aed",
-  stage_transition: "#7c3aed",
-  llm_call: "#92400e",
-  tool_call: "#0891b2",
-  skill_call: "#047857",
-  knowledge_search: "#a16207",
-  response: "#047857",
-  error: "#dc2626",
-  state_change: "#1d4ed8",
-  custom: "#6b7280",
+  user_message: "var(--afr-step-user-message, #475569)",
+  intent_classification: "var(--afr-step-intent-classification, #7c3aed)",
+  stage_transition: "var(--afr-step-stage-transition, #7c3aed)",
+  llm_call: "var(--afr-step-llm-call, #92400e)",
+  tool_call: "var(--afr-step-tool-call, #0891b2)",
+  skill_call: "var(--afr-step-skill-call, #047857)",
+  knowledge_search: "var(--afr-step-knowledge-search, #a16207)",
+  response: "var(--afr-step-response, #047857)",
+  error: "var(--afr-step-error, #dc2626)",
+  state_change: "var(--afr-step-state-change, #1d4ed8)",
+  custom: "var(--afr-step-custom, #6b7280)",
 };
 
 const DEFAULT_BG_COLORS: Record<ReplayStepType, string> = {
-  user_message: "#f1f5f9",
-  intent_classification: "#ede9fe",
-  stage_transition: "#ede9fe",
-  llm_call: "#fef3c7",
-  tool_call: "#cffafe",
-  skill_call: "#d1fae5",
-  knowledge_search: "#fef9c3",
-  response: "#d1fae5",
-  error: "#fee2e2",
-  state_change: "#dbeafe",
-  custom: "#f3f4f6",
+  user_message: "rgba(137,180,250,0.08)",
+  intent_classification: "rgba(203,166,247,0.08)",
+  stage_transition: "rgba(203,166,247,0.08)",
+  llm_call: "rgba(250,179,135,0.08)",
+  tool_call: "rgba(137,220,235,0.08)",
+  skill_call: "rgba(166,227,161,0.08)",
+  knowledge_search: "rgba(249,226,175,0.08)",
+  response: "rgba(166,227,161,0.08)",
+  error: "rgba(243,139,168,0.08)",
+  state_change: "rgba(137,180,250,0.08)",
+  custom: "rgba(108,112,134,0.08)",
 };
+
+/** Extract a subtitle from the detail record */
+function getSubtitle(step: ReplayStep): string | null {
+  const d = step.detail;
+  return (
+    (d.content_preview as string) ??
+    (d.result_summary as string) ??
+    (d.input_summary as string) ??
+    (d.output_summary as string) ??
+    (d.prompt_summary as string) ??
+    (d.response_summary as string) ??
+    (d.reason as string) ??
+    (d.error_message as string) ??
+    null
+  );
+}
+
+/** Format duration for display */
+function formatDuration(ms?: number): string | null {
+  if (ms === undefined) return null;
+  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
+  return `${ms}ms`;
+}
 
 interface FlowGraphProps {
   steps: ReplayStep[];
@@ -80,13 +103,22 @@ export function FlowGraph({
 
       rendered.push(
         <div key={groupId} style={parallelGroupStyle}>
+          {/* Fan-out: center top → each branch with curved paths */}
           <div style={connectorStyle}>
-            <svg width="100%" height="20" viewBox="0 0 200 20" preserveAspectRatio="none">
-              <line x1="100" y1="0" x2="100" y2="10" stroke="#e2e8f0" strokeWidth="2" />
-              <line x1={100 / groupSteps.length} y1="10" x2={200 - 100 / groupSteps.length} y2="10" stroke="#e2e8f0" strokeWidth="2" />
+            <svg width="100%" height={PARALLEL_CONNECTOR_H} viewBox={`0 0 200 ${PARALLEL_CONNECTOR_H}`} preserveAspectRatio="none" style={{ overflow: "visible" }}>
               {groupSteps.map((_, gi) => {
-                const x = 100 / groupSteps.length + (gi * (200 - 200 / groupSteps.length)) / Math.max(groupSteps.length - 1, 1);
-                return <line key={gi} x1={x} y1="10" x2={x} y2="20" stroke="#e2e8f0" strokeWidth="2" />;
+                const x = getParallelX(gi, groupSteps.length);
+                return (
+                  <path
+                    key={gi}
+                    d={`M100,0 C100,${PARALLEL_CONNECTOR_H * 0.6} ${x},${PARALLEL_CONNECTOR_H * 0.4} ${x},${PARALLEL_CONNECTOR_H}`}
+                    fill="none"
+                    stroke="var(--afr-connector, #e2e8f0)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    filter="url(#afr-glow)"
+                  />
+                );
               })}
             </svg>
           </div>
@@ -104,14 +136,23 @@ export function FlowGraph({
               />
             ))}
           </div>
+          {/* Fan-in: each branch → center bottom with curved paths */}
           <div style={connectorStyle}>
-            <svg width="100%" height="20" viewBox="0 0 200 20" preserveAspectRatio="none">
+            <svg width="100%" height={PARALLEL_CONNECTOR_H} viewBox={`0 0 200 ${PARALLEL_CONNECTOR_H}`} preserveAspectRatio="none" style={{ overflow: "visible" }}>
               {groupSteps.map((_, gi) => {
-                const x = 100 / groupSteps.length + (gi * (200 - 200 / groupSteps.length)) / Math.max(groupSteps.length - 1, 1);
-                return <line key={gi} x1={x} y1="0" x2={x} y2="10" stroke="#e2e8f0" strokeWidth="2" />;
+                const x = getParallelX(gi, groupSteps.length);
+                return (
+                  <path
+                    key={gi}
+                    d={`M${x},0 C${x},${PARALLEL_CONNECTOR_H * 0.6} 100,${PARALLEL_CONNECTOR_H * 0.4} 100,${PARALLEL_CONNECTOR_H}`}
+                    fill="none"
+                    stroke="var(--afr-connector, #e2e8f0)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    filter="url(#afr-glow)"
+                  />
+                );
               })}
-              <line x1={100 / groupSteps.length} y1="10" x2={200 - 100 / groupSteps.length} y2="10" stroke="#e2e8f0" strokeWidth="2" />
-              <line x1="100" y1="10" x2="100" y2="20" stroke="#e2e8f0" strokeWidth="2" />
             </svg>
           </div>
         </div>,
@@ -119,7 +160,17 @@ export function FlowGraph({
     } else {
       rendered.push(
         <div key={step.id} style={sequentialNodeStyle}>
-          {i > 0 && <div style={verticalLineStyle} />}
+          {i > 0 && (
+            <svg width="20" height={SEQ_CONNECTOR_H} style={{ flexShrink: 0, display: "block", overflow: "visible" }}>
+              <line
+                x1="10" y1="0" x2="10" y2={SEQ_CONNECTOR_H}
+                stroke="var(--afr-connector, #e2e8f0)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                filter="url(#afr-glow)"
+              />
+            </svg>
+          )}
           <StepNode
             step={step}
             isActive={isActive}
@@ -137,6 +188,18 @@ export function FlowGraph({
 
   return (
     <div ref={scrollRef} style={flowGraphStyle}>
+      {/* Shared SVG filter definition — referenced by all connectors */}
+      <svg width="0" height="0" style={{ position: "absolute" }}>
+        <defs>
+          <filter id="afr-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+      </svg>
       {rendered.length === 0 && (
         <p style={emptyStateStyle}>Press Play to start the replay</p>
       )}
@@ -156,6 +219,10 @@ const StepNode = forwardRef<
     bgColor: string;
   }
 >(function StepNode({ step, isActive, isSelected, onClick, borderColor, bgColor }, ref) {
+  const subtitle = getSubtitle(step);
+  const duration = formatDuration(step.durationMs);
+  const typeBadgeLabel = getTypeBadge(step);
+
   return (
     <button
       ref={ref}
@@ -163,45 +230,98 @@ const StepNode = forwardRef<
       onClick={onClick}
       style={{
         ...stepNodeStyle,
-        borderLeftColor: borderColor,
-        background: isSelected ? bgColor : "white",
-        boxShadow: isActive ? `0 0 0 2px ${borderColor}` : undefined,
+        borderColor: isSelected || isActive
+          ? borderColor
+          : "var(--afr-glass-border, var(--afr-border, #e2e8f0))",
+        background: isSelected
+          ? bgColor
+          : "var(--afr-bg-surface, white)",
+        boxShadow: isActive
+          ? `0 0 20px 4px color-mix(in srgb, ${borderColor} 30%, transparent), inset 0 1px 0 rgba(255,255,255,0.05)`
+          : "var(--afr-glass-shadow, none)",
+        animation: "afr-node-enter 0.3s ease-out both",
       }}
     >
-      <div style={stepHeaderStyle}>
+      {/* Row 1: status dot + label + duration */}
+      <div style={stepRow1Style}>
+        <span style={{ ...statusDotStyle, background: borderColor }} />
         <span style={stepLabelStyle}>{step.label}</span>
-        {step.durationMs !== undefined && (
-          <span style={stepDurationStyle}>{step.durationMs}ms</span>
+        {duration && <span style={stepDurationStyle}>{duration}</span>}
+      </div>
+
+      {/* Row 2: subtitle */}
+      {subtitle && (
+        <div style={subtitleStyle}>{subtitle}</div>
+      )}
+
+      {/* Row 3: badges */}
+      <div style={badgeRowStyle}>
+        {step.agent && (
+          <span style={{ ...agentBadgeStyle, borderColor }}>
+            <span style={{ ...badgeDotStyle, background: borderColor }} />
+            {step.agent.charAt(0).toUpperCase() + step.agent.slice(1)} Agent
+          </span>
+        )}
+        {typeBadgeLabel && (
+          <span style={typeBadgeSyle}>
+            {typeBadgeLabel}
+          </span>
         )}
       </div>
-      {step.agent && (
-        <span style={{ ...agentBadgeStyle, background: bgColor, color: borderColor }}>
-          {step.agent}
-        </span>
-      )}
-      <StatusIndicator status={step.status} />
     </button>
   );
 });
+
+/** Get a secondary badge label based on step type/detail */
+function getTypeBadge(step: ReplayStep): string | null {
+  switch (step.type) {
+    case "tool_call":
+      return (step.detail.name as string) ?? null;
+    case "skill_call":
+      return (step.detail.name as string) ?? null;
+    case "llm_call":
+      return (step.detail.stage as string) ?? null;
+    case "stage_transition":
+      return (step.detail.stage as string) ?? null;
+    case "state_change":
+      return step.status;
+    case "response":
+      return "complete";
+    default:
+      return null;
+  }
+}
 
 function StatusIndicator({ status }: { status: ReplayStep["status"] }) {
   switch (status) {
     case "running":
       return <span style={statusRunningStyle} />;
     case "completed":
-      return <span style={{ color: "#10b981", fontWeight: 600, fontSize: 12 }}>&#x2713;</span>;
+      return <span style={{ color: "var(--afr-step-skill-call, #10b981)", fontWeight: 600, fontSize: 12 }}>&#x2713;</span>;
     case "failed":
-      return <span style={{ color: "#ef4444", fontWeight: 600, fontSize: 12 }}>&#x2717;</span>;
+      return <span style={{ color: "var(--afr-step-error, #ef4444)", fontWeight: 600, fontSize: 12 }}>&#x2717;</span>;
     default:
       return <span style={statusPendingStyle} />;
   }
 }
 
-// Inline styles (no CSS modules dependency for portability)
+// ── Connector constants & helpers ──
+
+const SEQ_CONNECTOR_H = 24;
+const PARALLEL_CONNECTOR_H = 36;
+
+/** Compute the x position for the nth branch in a parallel group (0-200 viewBox) */
+function getParallelX(index: number, total: number): number {
+  if (total === 1) return 100;
+  const pad = 100 / total;
+  return pad + (index * (200 - 2 * pad)) / (total - 1);
+}
+
+// Inline styles
 const flowGraphStyle: React.CSSProperties = {
   flex: 1,
   overflowY: "auto",
-  padding: 16,
+  padding: 24,
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
@@ -210,7 +330,7 @@ const flowGraphStyle: React.CSSProperties = {
 
 const emptyStateStyle: React.CSSProperties = {
   fontSize: 13,
-  color: "#9ca3af",
+  color: "var(--afr-text-secondary, #9ca3af)",
   fontStyle: "italic",
   textAlign: "center",
   padding: "40px 20px",
@@ -221,60 +341,106 @@ const sequentialNodeStyle: React.CSSProperties = {
   flexDirection: "column",
   alignItems: "center",
   width: "100%",
-  maxWidth: 400,
-};
-
-const verticalLineStyle: React.CSSProperties = {
-  width: 2,
-  height: 16,
-  background: "#e2e8f0",
+  maxWidth: 700,
 };
 
 const stepNodeStyle: React.CSSProperties = {
   display: "flex",
-  alignItems: "center",
-  gap: 8,
-  padding: "8px 12px",
-  borderRadius: 8,
-  border: "1px solid #e2e8f0",
-  borderLeft: "4px solid #e2e8f0",
-  background: "white",
+  flexDirection: "column",
+  gap: 6,
+  padding: "12px 16px",
+  borderRadius: 10,
+  border: "1px solid var(--afr-glass-border, var(--afr-border, #e2e8f0))",
+  background: "var(--afr-bg-surface, white)",
+  backdropFilter: "blur(var(--afr-glass-blur, 0px))",
+  WebkitBackdropFilter: "blur(var(--afr-glass-blur, 0px))",
   cursor: "pointer",
   width: "100%",
-  transition: "all 0.15s ease",
+  transition: "border-color 0.2s ease, box-shadow 0.3s ease, background 0.2s ease",
   textAlign: "left",
 };
 
-const stepHeaderStyle: React.CSSProperties = {
-  flex: 1,
+const stepRow1Style: React.CSSProperties = {
   display: "flex",
-  flexDirection: "column",
-  gap: 2,
-  minWidth: 0,
+  alignItems: "center",
+  gap: 8,
+  width: "100%",
+};
+
+const statusDotStyle: React.CSSProperties = {
+  width: 8,
+  height: 8,
+  borderRadius: "50%",
+  flexShrink: 0,
+  boxShadow: "0 0 6px currentColor",
 };
 
 const stepLabelStyle: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 500,
-  color: "#1d262c",
+  fontSize: 14,
+  fontWeight: 600,
+  color: "var(--afr-text-primary, #1d262c)",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+  flex: 1,
 };
 
 const stepDurationStyle: React.CSSProperties = {
-  fontSize: 10,
-  color: "#9ca3af",
+  fontSize: 12,
+  color: "var(--afr-text-secondary, #9ca3af)",
   fontFamily: "ui-monospace, SFMono-Regular, monospace",
+  flexShrink: 0,
+};
+
+const subtitleStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: "var(--afr-text-secondary, #9ca3af)",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  paddingLeft: 16,
+};
+
+const badgeRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  paddingLeft: 16,
+  flexWrap: "wrap",
 };
 
 const agentBadgeStyle: React.CSSProperties = {
-  padding: "1px 8px",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 5,
+  padding: "3px 10px",
   borderRadius: 9999,
-  fontSize: 10,
+  fontSize: 11,
   fontWeight: 500,
-  flexShrink: 0,
-  whiteSpace: "nowrap",
+  background: "rgba(205, 214, 244, 0.06)",
+  color: "var(--afr-text-primary, #1d262c)",
+  border: "1px solid var(--afr-glass-border, var(--afr-border, #e2e8f0))",
+  backdropFilter: "blur(8px)",
+  WebkitBackdropFilter: "blur(8px)",
+};
+
+const badgeDotStyle: React.CSSProperties = {
+  width: 6,
+  height: 6,
+  borderRadius: "50%",
+  boxShadow: "0 0 4px currentColor",
+};
+
+const typeBadgeSyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "3px 10px",
+  borderRadius: 9999,
+  fontSize: 11,
+  fontWeight: 500,
+  background: "rgba(205, 214, 244, 0.04)",
+  color: "var(--afr-text-secondary, #9ca3af)",
+  border: "1px solid var(--afr-glass-border, var(--afr-border, #e2e8f0))",
 };
 
 const parallelGroupStyle: React.CSSProperties = {
@@ -282,28 +448,33 @@ const parallelGroupStyle: React.CSSProperties = {
   flexDirection: "column",
   alignItems: "center",
   width: "100%",
-  maxWidth: 500,
+  maxWidth: 900,
+  background: "rgba(205, 214, 244, 0.02)",
+  border: "1px dashed rgba(205, 214, 244, 0.08)",
+  borderRadius: 12,
+  padding: "4px 8px",
 };
 
 const parallelNodesStyle: React.CSSProperties = {
   display: "flex",
-  gap: 8,
+  gap: 12,
   width: "100%",
 };
 
 const connectorStyle: React.CSSProperties = {
   width: "100%",
-  height: 20,
+  height: PARALLEL_CONNECTOR_H,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  overflow: "visible",
 };
 
 const statusRunningStyle: React.CSSProperties = {
   width: 12,
   height: 12,
-  border: "2px solid #e5e7eb",
-  borderTopColor: "#3b82f6",
+  border: "2px solid var(--afr-border, #e5e7eb)",
+  borderTopColor: "var(--afr-step-state-change, #3b82f6)",
   borderRadius: "50%",
   animation: "afr-spin 0.8s linear infinite",
   flexShrink: 0,
@@ -313,6 +484,6 @@ const statusPendingStyle: React.CSSProperties = {
   width: 10,
   height: 10,
   borderRadius: "50%",
-  background: "#e5e7eb",
+  background: "var(--afr-border, #e5e7eb)",
   flexShrink: 0,
 };
