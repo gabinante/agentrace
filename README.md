@@ -7,7 +7,7 @@ Parse structured logs from any AI agent framework into a universal step format, 
 ## Quick Start
 
 ```bash
-npm install agentrace
+npm install github:gabinante/agentrace
 ```
 
 ```tsx
