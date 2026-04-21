@@ -1,5 +1,9 @@
 # agentrace
 
+[![CI](https://github.com/gabinante/agentrace/actions/workflows/ci.yml/badge.svg)](https://github.com/gabinante/agentrace/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7+-blue)](https://www.typescriptlang.org/)
+
 Turn agent logs into interactive flow visualizations. Framework-agnostic log parsing with React replay components.
 
 Parse structured logs from any AI agent framework into a universal step format, then visualize them as an interactive flow graph with playback controls, parallel execution detection, and a detail panel.

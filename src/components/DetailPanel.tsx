@@ -8,14 +8,14 @@ interface DetailPanelProps {
 export function DetailPanel({ step }: DetailPanelProps) {
   if (!step) {
     return (
-      <div style={panelStyle}>
+      <aside aria-label="Step details" style={panelStyle}>
         <p style={emptyStyle}>Select a step to view details</p>
-      </div>
+      </aside>
     );
   }
 
   return (
-    <div style={panelStyle}>
+    <aside aria-label="Step details" style={panelStyle}>
       <div style={headerStyle}>
         <h4 style={titleStyle}>{step.label}</h4>
         <div style={metaStyle}>
@@ -39,25 +39,30 @@ export function DetailPanel({ step }: DetailPanelProps) {
         {Object.entries(step.detail).map(([key, value]) => {
           if (value === undefined || value === null) return null;
           if (typeof value === "object") {
-            return <CollapsibleJson key={key} label={key} data={value as Record<string, unknown>} />;
+            return (
+              <CollapsibleJson key={key} label={key} data={value as Record<string, unknown>} />
+            );
           }
           return <DetailRow key={key} label={key} value={String(value)} />;
         })}
       </div>
-    </div>
+    </aside>
   );
 }
 
 function StatusBadge({ status }: { status: ReplayStep["status"] }) {
   const colors: Record<string, { bg: string; color: string }> = {
-    pending: { bg: "var(--afr-bg-secondary, #f1f5f9)", color: "var(--afr-text-secondary, #475569)" },
+    pending: {
+      bg: "var(--afr-bg-secondary, #f1f5f9)",
+      color: "var(--afr-text-secondary, #475569)",
+    },
     running: { bg: "rgba(59,130,246,0.15)", color: "var(--afr-step-state-change, #1d4ed8)" },
     completed: { bg: "rgba(16,185,129,0.15)", color: "var(--afr-step-skill-call, #047857)" },
     failed: { bg: "rgba(239,68,68,0.15)", color: "var(--afr-step-error, #dc2626)" },
   };
   const c = colors[status] ?? colors.pending;
   return (
-    <span style={{ ...badgeStyle, background: c.bg, color: c.color }}>
+    <span role="status" style={{ ...badgeStyle, background: c.bg, color: c.color }}>
       {status}
     </span>
   );
@@ -83,7 +88,12 @@ function CollapsibleJson({ label, data }: { label: string; data: Record<string, 
       <span style={labelStyle}>{label}</span>
       <code style={jsonBlockStyle}>{displayed}</code>
       {isLong && (
-        <button type="button" onClick={() => setExpanded(!expanded)} style={toggleStyle}>
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          style={toggleStyle}
+          aria-expanded={expanded}
+        >
           {expanded ? "Show less" : "Show more"}
         </button>
       )}

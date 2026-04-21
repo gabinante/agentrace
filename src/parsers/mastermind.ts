@@ -4,7 +4,7 @@
  * This is the reference parser — it transforms the event format used by
  * the Mastermind agent orchestrator into ReplayStep[].
  */
-import type { ReplayStep, ReplayStepType } from "../types";
+import type { ReplayStep } from "../types";
 import { detectParallelGroups } from "../utils/detectParallelGroups";
 
 // ─── Event Types ─────────────────────────────────────────────────────────────
@@ -145,8 +145,7 @@ export type MastermindEvent =
  */
 export function parseMastermindEvents(events: MastermindEvent[]): ReplayStep[] {
   const sorted = [...events].sort(
-    (a, b) =>
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
   );
 
   const steps: ReplayStep[] = [];

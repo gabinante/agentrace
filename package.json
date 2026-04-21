@@ -17,13 +17,19 @@
     "./parsers": {
       "types": "./dist/parsers/index.d.ts",
       "import": "./dist/parsers/index.js"
-    }
+    },
+    "./styles": "./src/styles/agentrace.css"
   },
+  "sideEffects": false,
   "scripts": {
     "dev": "vite demo",
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
+    "format": "prettier --write 'src/**/*.{ts,tsx}'",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx}'",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepublishOnly": "npm run build"
   },
   "files": [
@@ -32,34 +38,55 @@
   ],
   "keywords": [
     "agent",
+    "agentrace",
     "flow",
     "replay",
     "visualization",
     "logs",
     "debugging",
     "ai-agents",
-    "observability"
+    "observability",
+    "opentelemetry",
+    "otel",
+    "tracing"
   ],
+  "author": "Gabe Abinante",
   "license": "MIT",
+  "homepage": "https://github.com/gabinante/agentrace#readme",
+  "bugs": {
+    "url": "https://github.com/gabinante/agentrace/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/gabinante/agentrace"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
     "eslint": "^9.0.0",
-    "primereact": "^10.5.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "happy-dom": "^20.9.0",
+    "prettier": "^3.8.3",
     "primeicons": "^7.0.0",
+    "primereact": "^10.5.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.7.0",
+    "typescript-eslint": "^8.59.0",
     "vite": "^6.0.0",
-    "@vitejs/plugin-react": "^4.0.0"
+    "vitest": "^4.1.4"
   }
 }

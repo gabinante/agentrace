@@ -30,15 +30,33 @@ export function Controls({
   const displayIndex = Math.max(0, currentStepIndex + 1);
 
   return (
-    <div style={controlsStyle}>
-      <div style={transportStyle}>
-        <button type="button" style={transportBtnStyle} onClick={stepBack} title="Step back (Left arrow)">
+    <nav aria-label="Playback controls" style={controlsStyle}>
+      <div style={transportStyle} role="group" aria-label="Transport">
+        <button
+          type="button"
+          style={transportBtnStyle}
+          onClick={stepBack}
+          aria-label="Step back"
+          title="Step back (Left arrow)"
+        >
           ⏮
         </button>
-        <button type="button" style={playBtnStyle} onClick={isPlaying ? pause : play} title={isPlaying ? "Pause (Space)" : "Play (Space)"}>
+        <button
+          type="button"
+          style={playBtnStyle}
+          onClick={isPlaying ? pause : play}
+          aria-label={isPlaying ? "Pause playback" : "Play from start"}
+          title={isPlaying ? "Pause (Space)" : "Play (Space)"}
+        >
           {isPlaying ? "⏸" : "▶"}
         </button>
-        <button type="button" style={transportBtnStyle} onClick={stepForward} title="Step forward (Right arrow)">
+        <button
+          type="button"
+          style={transportBtnStyle}
+          onClick={stepForward}
+          aria-label="Step forward"
+          title="Step forward (Right arrow)"
+        >
           ⏭
         </button>
       </div>
@@ -51,26 +69,33 @@ export function Controls({
           max={Math.max(0, totalSteps - 1)}
           value={Math.max(0, currentStepIndex)}
           onChange={(e) => seekTo(Number(e.target.value))}
+          aria-label="Seek to step"
+          aria-valuemin={0}
+          aria-valuemax={totalSteps - 1}
+          aria-valuenow={Math.max(0, currentStepIndex)}
+          aria-valuetext={`Step ${displayIndex} of ${totalSteps}`}
         />
       </div>
 
-      <span style={counterStyle}>
+      <span style={counterStyle} aria-live="polite">
         {displayIndex} / {totalSteps}
       </span>
 
-      <div style={speedGroupStyle}>
+      <div style={speedGroupStyle} role="group" aria-label="Playback speed">
         {SPEEDS.map((s) => (
           <button
             key={s}
             type="button"
             style={speed === s ? { ...speedBtnStyle, ...speedActiveStyle } : speedBtnStyle}
             onClick={() => setSpeed(s)}
+            aria-label={`Set speed to ${s}x`}
+            aria-pressed={speed === s}
           >
             {s}x
           </button>
         ))}
       </div>
-    </div>
+    </nav>
   );
 }
 

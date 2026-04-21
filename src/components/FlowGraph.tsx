@@ -93,19 +93,27 @@ export function FlowGraph({
     if (step.isParallel && step.parallelGroupId) {
       const groupId = step.parallelGroupId;
       const groupSteps: { step: ReplayStep; idx: number }[] = [];
-      while (
-        i < visibleSteps.length &&
-        visibleSteps[i].parallelGroupId === groupId
-      ) {
+      while (i < visibleSteps.length && visibleSteps[i].parallelGroupId === groupId) {
         groupSteps.push({ step: visibleSteps[i], idx: i });
         i++;
       }
 
       rendered.push(
-        <div key={groupId} style={parallelGroupStyle}>
+        <div
+          key={groupId}
+          role="group"
+          aria-label="Parallel execution group"
+          style={parallelGroupStyle}
+        >
           {/* Fan-out: center top → each branch with curved paths */}
           <div style={connectorStyle}>
-            <svg width="100%" height={PARALLEL_CONNECTOR_H} viewBox={`0 0 200 ${PARALLEL_CONNECTOR_H}`} preserveAspectRatio="none" style={{ overflow: "visible" }}>
+            <svg
+              width="100%"
+              height={PARALLEL_CONNECTOR_H}
+              viewBox={`0 0 200 ${PARALLEL_CONNECTOR_H}`}
+              preserveAspectRatio="none"
+              style={{ overflow: "visible" }}
+            >
               {groupSteps.map((_, gi) => {
                 const x = getParallelX(gi, groupSteps.length);
                 return (
@@ -138,7 +146,13 @@ export function FlowGraph({
           </div>
           {/* Fan-in: each branch → center bottom with curved paths */}
           <div style={connectorStyle}>
-            <svg width="100%" height={PARALLEL_CONNECTOR_H} viewBox={`0 0 200 ${PARALLEL_CONNECTOR_H}`} preserveAspectRatio="none" style={{ overflow: "visible" }}>
+            <svg
+              width="100%"
+              height={PARALLEL_CONNECTOR_H}
+              viewBox={`0 0 200 ${PARALLEL_CONNECTOR_H}`}
+              preserveAspectRatio="none"
+              style={{ overflow: "visible" }}
+            >
               {groupSteps.map((_, gi) => {
                 const x = getParallelX(gi, groupSteps.length);
                 return (
@@ -159,11 +173,19 @@ export function FlowGraph({
       );
     } else {
       rendered.push(
-        <div key={step.id} style={sequentialNodeStyle}>
+        <div key={step.id} role="listitem" style={sequentialNodeStyle}>
           {i > 0 && (
-            <svg width="20" height={SEQ_CONNECTOR_H} style={{ flexShrink: 0, display: "block", overflow: "visible" }}>
+            <svg
+              aria-hidden="true"
+              width="20"
+              height={SEQ_CONNECTOR_H}
+              style={{ flexShrink: 0, display: "block", overflow: "visible" }}
+            >
               <line
-                x1="10" y1="0" x2="10" y2={SEQ_CONNECTOR_H}
+                x1="10"
+                y1="0"
+                x2="10"
+                y2={SEQ_CONNECTOR_H}
                 stroke="var(--afr-connector, #e2e8f0)"
                 strokeWidth="2"
                 strokeLinecap="round"
@@ -187,9 +209,9 @@ export function FlowGraph({
   }
 
   return (
-    <div ref={scrollRef} style={flowGraphStyle}>
+    <div ref={scrollRef} role="list" aria-label="Agent execution steps" style={flowGraphStyle}>
       {/* Shared SVG filter definition — referenced by all connectors */}
-      <svg width="0" height="0" style={{ position: "absolute" }}>
+      <svg aria-hidden="true" width="0" height="0" style={{ position: "absolute" }}>
         <defs>
           <filter id="afr-glow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
@@ -200,9 +222,7 @@ export function FlowGraph({
           </filter>
         </defs>
       </svg>
-      {rendered.length === 0 && (
-        <p style={emptyStateStyle}>Press Play to start the replay</p>
-      )}
+      {rendered.length === 0 && <p style={emptyStateStyle}>Press Play to start the replay</p>}
       {rendered}
     </div>
   );
@@ -228,14 +248,16 @@ const StepNode = forwardRef<
       ref={ref}
       type="button"
       onClick={onClick}
+      aria-label={`${step.label}, ${step.status}${duration ? `, ${duration}` : ""}`}
+      aria-pressed={isSelected}
+      aria-current={isActive ? "step" : undefined}
       style={{
         ...stepNodeStyle,
-        borderColor: isSelected || isActive
-          ? borderColor
-          : "var(--afr-glass-border, var(--afr-border, #e2e8f0))",
-        background: isSelected
-          ? bgColor
-          : "var(--afr-bg-surface, white)",
+        borderColor:
+          isSelected || isActive
+            ? borderColor
+            : "var(--afr-glass-border, var(--afr-border, #e2e8f0))",
+        background: isSelected ? bgColor : "var(--afr-bg-surface, white)",
         boxShadow: isActive
           ? `0 0 20px 4px color-mix(in srgb, ${borderColor} 30%, transparent), inset 0 1px 0 rgba(255,255,255,0.05)`
           : "var(--afr-glass-shadow, none)",
@@ -250,9 +272,7 @@ const StepNode = forwardRef<
       </div>
 
       {/* Row 2: subtitle */}
-      {subtitle && (
-        <div style={subtitleStyle}>{subtitle}</div>
-      )}
+      {subtitle && <div style={subtitleStyle}>{subtitle}</div>}
 
       {/* Row 3: badges */}
       <div style={badgeRowStyle}>
@@ -262,11 +282,7 @@ const StepNode = forwardRef<
             {step.agent.charAt(0).toUpperCase() + step.agent.slice(1)} Agent
           </span>
         )}
-        {typeBadgeLabel && (
-          <span style={typeBadgeSyle}>
-            {typeBadgeLabel}
-          </span>
-        )}
+        {typeBadgeLabel && <span style={typeBadgeSyle}>{typeBadgeLabel}</span>}
       </div>
     </button>
   );
@@ -289,19 +305,6 @@ function getTypeBadge(step: ReplayStep): string | null {
       return "complete";
     default:
       return null;
-  }
-}
-
-function StatusIndicator({ status }: { status: ReplayStep["status"] }) {
-  switch (status) {
-    case "running":
-      return <span style={statusRunningStyle} />;
-    case "completed":
-      return <span style={{ color: "var(--afr-step-skill-call, #10b981)", fontWeight: 600, fontSize: 12 }}>&#x2713;</span>;
-    case "failed":
-      return <span style={{ color: "var(--afr-step-error, #ef4444)", fontWeight: 600, fontSize: 12 }}>&#x2717;</span>;
-    default:
-      return <span style={statusPendingStyle} />;
   }
 }
 
@@ -468,22 +471,4 @@ const connectorStyle: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   overflow: "visible",
-};
-
-const statusRunningStyle: React.CSSProperties = {
-  width: 12,
-  height: 12,
-  border: "2px solid var(--afr-border, #e5e7eb)",
-  borderTopColor: "var(--afr-step-state-change, #3b82f6)",
-  borderRadius: "50%",
-  animation: "afr-spin 0.8s linear infinite",
-  flexShrink: 0,
-};
-
-const statusPendingStyle: React.CSSProperties = {
-  width: 10,
-  height: 10,
-  borderRadius: "50%",
-  background: "var(--afr-border, #e5e7eb)",
-  flexShrink: 0,
 };

@@ -1,0 +1,86 @@
+/* agentrace default theme */
+/* Import via: import "agentrace/styles" */
+
+:root {
+  --afr-bg-primary: #ffffff;
+  --afr-bg-secondary: #f8fafc;
+  --afr-bg-surface: #ffffff;
+  --afr-border: #e2e8f0;
+  --afr-text-primary: #1d262c;
+  --afr-text-secondary: #9ca3af;
+  --afr-text-mono: #1d262c;
+  --afr-connector: #e2e8f0;
+  --afr-glass-bg: rgba(255, 255, 255, 0.06);
+  --afr-glass-border: #e2e8f0;
+  --afr-glass-blur: 0px;
+  --afr-glass-shadow: none;
+
+  --afr-step-user-message: #475569;
+  --afr-step-intent-classification: #7c3aed;
+  --afr-step-stage-transition: #7c3aed;
+  --afr-step-llm-call: #92400e;
+  --afr-step-tool-call: #0891b2;
+  --afr-step-skill-call: #047857;
+  --afr-step-knowledge-search: #a16207;
+  --afr-step-response: #047857;
+  --afr-step-error: #dc2626;
+  --afr-step-state-change: #1d4ed8;
+  --afr-step-custom: #6b7280;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --afr-bg-primary: #0f172a;
+    --afr-bg-secondary: #1e293b;
+    --afr-bg-surface: #1e293b;
+    --afr-border: #334155;
+    --afr-text-primary: #e2e8f0;
+    --afr-text-secondary: #94a3b8;
+    --afr-text-mono: #a6e3a1;
+    --afr-connector: #475569;
+    --afr-glass-bg: rgba(30, 30, 46, 0.45);
+    --afr-glass-border: rgba(205, 214, 244, 0.08);
+    --afr-glass-blur: 16px;
+    --afr-glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+
+    --afr-step-user-message: #89b4fa;
+    --afr-step-llm-call: #fab387;
+    --afr-step-tool-call: #89dceb;
+    --afr-step-skill-call: #a6e3a1;
+    --afr-step-error: #f38ba8;
+    --afr-step-stage-transition: #cba6f7;
+    --afr-step-intent-classification: #cba6f7;
+    --afr-step-knowledge-search: #f9e2af;
+    --afr-step-response: #a6e3a1;
+    --afr-step-state-change: #89b4fa;
+    --afr-step-custom: #6c7086;
+  }
+}
+
+/* Keyframe animations used by agentrace components */
+@keyframes afr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes afr-glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 6px 2px var(--afr-glow-color, rgba(59, 130, 246, 0.3));
+  }
+  50% {
+    box-shadow: 0 0 14px 4px var(--afr-glow-color, rgba(59, 130, 246, 0.5));
+  }
+}
+
+@keyframes afr-node-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

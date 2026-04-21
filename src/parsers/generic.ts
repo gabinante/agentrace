@@ -46,8 +46,7 @@ const VALID_TYPES: Set<string> = new Set([
  */
 export function parseGenericJsonLogs(entries: GenericLogEntry[]): ReplayStep[] {
   const sorted = [...entries].sort(
-    (a, b) =>
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
   );
 
   const steps: ReplayStep[] = sorted.map((entry, i) => {

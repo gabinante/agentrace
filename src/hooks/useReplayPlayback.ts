@@ -17,9 +17,7 @@ function clampDelay(ms: number): number {
   return Math.max(100, Math.min(3000, ms));
 }
 
-export function useReplayPlayback(
-  steps: ReplayStep[],
-): UseReplayPlaybackReturn {
+export function useReplayPlayback(steps: ReplayStep[]): UseReplayPlaybackReturn {
   const [currentStepIndex, setCurrentStepIndex] = useState(
     steps.length > 0 ? steps.length - 1 : -1,
   );
@@ -28,13 +26,20 @@ export function useReplayPlayback(
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stepsRef = useRef(steps);
-  stepsRef.current = steps;
-
   const speedRef = useRef(speed);
-  speedRef.current = speed;
-
   const currentRef = useRef(currentStepIndex);
-  currentRef.current = currentStepIndex;
+
+  // Keep refs in sync — intentionally updating in an effect so callbacks
+  // always see the latest values without needing re-creation.
+  useEffect(() => {
+    stepsRef.current = steps;
+  }, [steps]);
+  useEffect(() => {
+    speedRef.current = speed;
+  }, [speed]);
+  useEffect(() => {
+    currentRef.current = currentStepIndex;
+  }, [currentStepIndex]);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -58,9 +63,7 @@ export function useReplayPlayback(
 
     let delay: number;
     if (current && next) {
-      const delta =
-        new Date(next.timestamp).getTime() -
-        new Date(current.timestamp).getTime();
+      const delta = new Date(next.timestamp).getTime() - new Date(current.timestamp).getTime();
       delay = clampDelay(delta) / speedRef.current;
     } else {
       delay = 500 / speedRef.current;
@@ -84,9 +87,10 @@ export function useReplayPlayback(
     return clearTimer;
   }, [isPlaying, currentStepIndex, clearTimer, scheduleNext]);
 
+  // Reset playback state when the steps array changes (e.g. data source toggle).
   useEffect(() => {
     clearTimer();
-    setIsPlaying(false);
+    setIsPlaying(false); // eslint-disable-line react-hooks/set-state-in-effect
     setCurrentStepIndex(steps.length > 0 ? steps.length - 1 : -1);
   }, [steps, clearTimer]);
 
@@ -137,11 +141,7 @@ export function useReplayPlayback(
   // Keyboard shortcuts
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      )
-        return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       switch (e.key) {
         case " ":

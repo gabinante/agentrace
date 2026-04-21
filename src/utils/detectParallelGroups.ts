@@ -20,8 +20,7 @@ export function detectParallelGroups(
 
     for (let j = i + 1; j < steps.length; j++) {
       const candidate = steps[j];
-      if (!parallelTypes.includes(candidate.type) || candidate.isParallel)
-        continue;
+      if (!parallelTypes.includes(candidate.type) || candidate.isParallel) continue;
 
       const candidateTime = new Date(candidate.timestamp).getTime();
       if (candidateTime - stepTime > thresholdMs) break;

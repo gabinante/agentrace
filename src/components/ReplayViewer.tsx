@@ -30,7 +30,7 @@ export function ReplayViewer({ steps, height = "600px" }: ReplayViewerProps) {
   }, []);
 
   return (
-    <div style={{ ...containerStyle, height }}>
+    <div role="region" aria-label="Agent trace replay viewer" style={{ ...containerStyle, height }}>
       <div style={layoutStyle}>
         <FlowGraph
           steps={steps}

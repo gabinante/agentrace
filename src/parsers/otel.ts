@@ -98,8 +98,7 @@ function flattenAttributes(
     else if (v.intValue !== undefined) out[attr.key] = Number(v.intValue);
     else if (v.doubleValue !== undefined) out[attr.key] = v.doubleValue;
     else if (v.boolValue !== undefined) out[attr.key] = v.boolValue;
-    else if (v.arrayValue)
-      out[attr.key] = v.arrayValue.values.map((x) => x.stringValue ?? "");
+    else if (v.arrayValue) out[attr.key] = v.arrayValue.values.map((x) => x.stringValue ?? "");
   }
   return out;
 }
@@ -119,12 +118,9 @@ function toISO(ms: number): string {
 }
 
 /** OTel status code: 0 = UNSET, 1 = OK, 2 = ERROR */
-function mapStatus(
-  status?: OTelSpan["status"],
-): "completed" | "failed" | "pending" {
+function mapStatus(status?: OTelSpan["status"]): "completed" | "failed" | "pending" {
   if (!status) return "completed";
-  const code =
-    typeof status.code === "string" ? parseInt(status.code, 10) : status.code;
+  const code = typeof status.code === "string" ? parseInt(status.code, 10) : status.code;
   if (code === 2) return "failed";
   return "completed";
 }
@@ -201,8 +197,7 @@ function detectStepType(
     if (st === "llm" || st === "chat") return "llm_call";
     if (st === "tool") return "tool_call";
     if (st === "retrieval" || st === "embedding") return "knowledge_search";
-    if (st === "agent" || st === "workflow" || st === "chain")
-      return "stage_transition";
+    if (st === "agent" || st === "workflow" || st === "chain") return "stage_transition";
     if (st === "task") return "skill_call";
   }
 
@@ -216,19 +211,14 @@ function detectStepType(
 
 // ─── Label generation ────────────────────────────────────────────────────────
 
-function makeLabel(
-  type: ReplayStepType,
-  name: string,
-  attrs: Record<string, unknown>,
-): string {
+function makeLabel(type: ReplayStepType, name: string, attrs: Record<string, unknown>): string {
   switch (type) {
     case "llm_call": {
       const model = attrs[GENAI_KEYS.model] ?? attrs["llm.model"];
       return model ? `LLM: ${model}` : `LLM: ${name}`;
     }
     case "tool_call": {
-      const toolName =
-        attrs[GENAI_KEYS.toolName] ?? attrs["tool.name"] ?? name;
+      const toolName = attrs[GENAI_KEYS.toolName] ?? attrs["tool.name"] ?? name;
       return `Tool: ${toolName}`;
     }
     case "knowledge_search": {
@@ -257,10 +247,7 @@ function makeLabel(
  * collector output. Also handles Langtrace, LangSmith, and other
  * OTel-based AI observability tools.
  */
-export function parseOTelSpans(
-  spans: OTelSpan[],
-  options: OTelParserOptions = {},
-): ReplayStep[] {
+export function parseOTelSpans(spans: OTelSpan[], options: OTelParserOptions = {}): ReplayStep[] {
   const {
     typeOverrides,
     agentAttribute = "agent.name",
@@ -281,20 +268,12 @@ export function parseOTelSpans(
   }
 
   // If leafOnly, filter to spans that have no children
-  const spansToProcess = leafOnly
-    ? spans.filter((s) => !childMap.has(s.spanId))
-    : spans;
+  const spansToProcess = leafOnly ? spans.filter((s) => !childMap.has(s.spanId)) : spans;
 
   // Sort by start time
   const sorted = [...spansToProcess].sort((a, b) => {
-    const aMs =
-      toEpochMs(a.startTimeUnixNano) ??
-      toEpochMs(a.startTime) ??
-      0;
-    const bMs =
-      toEpochMs(b.startTimeUnixNano) ??
-      toEpochMs(b.startTime) ??
-      0;
+    const aMs = toEpochMs(a.startTimeUnixNano) ?? toEpochMs(a.startTime) ?? 0;
+    const bMs = toEpochMs(b.startTimeUnixNano) ?? toEpochMs(b.startTime) ?? 0;
     return aMs - bMs;
   });
 
@@ -318,14 +297,9 @@ export function parseOTelSpans(
     const type = detectStepType(span.name, attrs, typeOverrides);
     const label = makeLabel(type, span.name, attrs);
 
-    const startMs =
-      toEpochMs(span.startTimeUnixNano) ??
-      toEpochMs(span.startTime) ??
-      Date.now();
-    const endMs =
-      toEpochMs(span.endTimeUnixNano) ?? toEpochMs(span.endTime);
-    const durationMs =
-      endMs !== null ? Math.round(endMs - startMs) : undefined;
+    const startMs = toEpochMs(span.startTimeUnixNano) ?? toEpochMs(span.startTime) ?? Date.now();
+    const endMs = toEpochMs(span.endTimeUnixNano) ?? toEpochMs(span.endTime);
+    const durationMs = endMs !== null ? Math.round(endMs - startMs) : undefined;
     const timestamp = toISO(startMs);
 
     // Reset context on new trace
@@ -380,28 +354,20 @@ export function parseOTelSpans(
         const model = attrs[GENAI_KEYS.model] ?? attrs["llm.model"];
         if (model) detail.model = model;
         if (attrs[GENAI_KEYS.system]) detail.system = attrs[GENAI_KEYS.system];
-        if (attrs[GENAI_KEYS.inputTokens])
-          detail.input_tokens = attrs[GENAI_KEYS.inputTokens];
-        if (attrs[GENAI_KEYS.outputTokens])
-          detail.output_tokens = attrs[GENAI_KEYS.outputTokens];
-        if (attrs[GENAI_KEYS.temperature])
-          detail.temperature = attrs[GENAI_KEYS.temperature];
-        if (attrs[GENAI_KEYS.maxTokens])
-          detail.max_tokens = attrs[GENAI_KEYS.maxTokens];
-        if (attrs[GENAI_KEYS.finishReason])
-          detail.finish_reason = attrs[GENAI_KEYS.finishReason];
-        if (attrs[GENAI_KEYS.prompt])
-          detail.prompt_summary = attrs[GENAI_KEYS.prompt];
-        if (attrs[GENAI_KEYS.completion])
-          detail.response_summary = attrs[GENAI_KEYS.completion];
+        if (attrs[GENAI_KEYS.inputTokens]) detail.input_tokens = attrs[GENAI_KEYS.inputTokens];
+        if (attrs[GENAI_KEYS.outputTokens]) detail.output_tokens = attrs[GENAI_KEYS.outputTokens];
+        if (attrs[GENAI_KEYS.temperature]) detail.temperature = attrs[GENAI_KEYS.temperature];
+        if (attrs[GENAI_KEYS.maxTokens]) detail.max_tokens = attrs[GENAI_KEYS.maxTokens];
+        if (attrs[GENAI_KEYS.finishReason]) detail.finish_reason = attrs[GENAI_KEYS.finishReason];
+        if (attrs[GENAI_KEYS.prompt]) detail.prompt_summary = attrs[GENAI_KEYS.prompt];
+        if (attrs[GENAI_KEYS.completion]) detail.response_summary = attrs[GENAI_KEYS.completion];
         // Update rolling context
         lastLlmModel = String(model ?? span.name);
         lastLlmPrompt = (attrs[GENAI_KEYS.prompt] as string) ?? null;
         break;
       }
       case "tool_call": {
-        const toolName =
-          attrs[GENAI_KEYS.toolName] ?? attrs["tool.name"] ?? span.name;
+        const toolName = attrs[GENAI_KEYS.toolName] ?? attrs["tool.name"] ?? span.name;
         detail.name = toolName;
         if (attrs["tool.input"]) detail.inputs = attrs["tool.input"];
         if (attrs["tool.output"]) detail.result_summary = attrs["tool.output"];
@@ -410,10 +376,8 @@ export function parseOTelSpans(
       case "knowledge_search": {
         if (attrs["db.query"]) detail.query = attrs["db.query"];
         if (attrs["retrieval.query"]) detail.query = attrs["retrieval.query"];
-        if (attrs["db.results_count"])
-          detail.results_count = attrs["db.results_count"];
-        if (attrs["retrieval.documents"])
-          detail.chunks = attrs["retrieval.documents"];
+        if (attrs["db.results_count"]) detail.results_count = attrs["db.results_count"];
+        if (attrs["retrieval.documents"]) detail.chunks = attrs["retrieval.documents"];
         break;
       }
       default:
@@ -424,8 +388,7 @@ export function parseOTelSpans(
     const errorEvent = span.events?.find((e) => e.name === "exception");
     if (errorEvent) {
       const errorAttrs = flattenAttributes(errorEvent.attributes);
-      detail.error_message =
-        errorAttrs["exception.message"] ?? errorAttrs["exception.type"];
+      detail.error_message = errorAttrs["exception.message"] ?? errorAttrs["exception.type"];
       if (errorAttrs["exception.stacktrace"])
         detail.stacktrace = errorAttrs["exception.stacktrace"];
     }
