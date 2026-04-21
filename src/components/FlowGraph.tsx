@@ -119,7 +119,7 @@ export function FlowGraph({
                 return (
                   <path
                     key={gi}
-                    d={`M100,0 C100,${PARALLEL_CONNECTOR_H * 0.6} ${x},${PARALLEL_CONNECTOR_H * 0.4} ${x},${PARALLEL_CONNECTOR_H}`}
+                    d={fanOutPath(x, PARALLEL_CONNECTOR_H)}
                     fill="none"
                     stroke="var(--afr-connector, #e2e8f0)"
                     strokeWidth="2"
@@ -158,7 +158,7 @@ export function FlowGraph({
                 return (
                   <path
                     key={gi}
-                    d={`M${x},0 C${x},${PARALLEL_CONNECTOR_H * 0.6} 100,${PARALLEL_CONNECTOR_H * 0.4} 100,${PARALLEL_CONNECTOR_H}`}
+                    d={fanInPath(x, PARALLEL_CONNECTOR_H)}
                     fill="none"
                     stroke="var(--afr-connector, #e2e8f0)"
                     strokeWidth="2"
@@ -177,15 +177,15 @@ export function FlowGraph({
           {i > 0 && (
             <svg
               aria-hidden="true"
-              width="20"
+              width="100%"
               height={SEQ_CONNECTOR_H}
+              viewBox={`0 0 200 ${SEQ_CONNECTOR_H}`}
+              preserveAspectRatio="none"
               style={{ flexShrink: 0, display: "block", overflow: "visible" }}
             >
-              <line
-                x1="10"
-                y1="0"
-                x2="10"
-                y2={SEQ_CONNECTOR_H}
+              <path
+                d={`M100,0 L100,${SEQ_CONNECTOR_H}`}
+                fill="none"
                 stroke="var(--afr-connector, #e2e8f0)"
                 strokeWidth="2"
                 strokeLinecap="round"
@@ -316,8 +316,26 @@ const PARALLEL_CONNECTOR_H = 36;
 /** Compute the x position for the nth branch in a parallel group (0-200 viewBox) */
 function getParallelX(index: number, total: number): number {
   if (total === 1) return 100;
-  const pad = 100 / total;
+  // Spread branches evenly across the viewBox, with padding from edges
+  const pad = 20;
   return pad + (index * (200 - 2 * pad)) / (total - 1);
+}
+
+/** Build a fan-out path from center top to branch position */
+function fanOutPath(x: number, h: number): string {
+  // When the target is at center (x≈100), add a subtle S-curve so it's visible as a branch
+  if (Math.abs(x - 100) < 1) {
+    return `M100,0 C92,${h * 0.35} 108,${h * 0.65} ${x},${h}`;
+  }
+  return `M100,0 C100,${h * 0.6} ${x},${h * 0.4} ${x},${h}`;
+}
+
+/** Build a fan-in path from branch position to center bottom */
+function fanInPath(x: number, h: number): string {
+  if (Math.abs(x - 100) < 1) {
+    return `M${x},0 C108,${h * 0.35} 92,${h * 0.65} 100,${h}`;
+  }
+  return `M${x},0 C${x},${h * 0.6} 100,${h * 0.4} 100,${h}`;
 }
 
 // Inline styles
