@@ -108,11 +108,12 @@ export function FlowGraph({
           {/* Fan-out: center top → each branch with curved paths */}
           <div style={connectorStyle}>
             <svg
+              aria-hidden="true"
               width="100%"
               height={PARALLEL_CONNECTOR_H}
               viewBox={`0 0 200 ${PARALLEL_CONNECTOR_H}`}
               preserveAspectRatio="none"
-              style={{ overflow: "visible" }}
+              style={{ overflow: "visible", display: "block", filter: CONNECTOR_CSS_GLOW }}
             >
               {groupSteps.map((_, gi) => {
                 const x = getParallelX(gi, groupSteps.length);
@@ -124,7 +125,6 @@ export function FlowGraph({
                     stroke="var(--afr-connector, #e2e8f0)"
                     strokeWidth="2"
                     strokeLinecap="round"
-                    filter="url(#afr-glow)"
                   />
                 );
               })}
@@ -147,11 +147,12 @@ export function FlowGraph({
           {/* Fan-in: each branch → center bottom with curved paths */}
           <div style={connectorStyle}>
             <svg
+              aria-hidden="true"
               width="100%"
               height={PARALLEL_CONNECTOR_H}
               viewBox={`0 0 200 ${PARALLEL_CONNECTOR_H}`}
               preserveAspectRatio="none"
-              style={{ overflow: "visible" }}
+              style={{ overflow: "visible", display: "block", filter: CONNECTOR_CSS_GLOW }}
             >
               {groupSteps.map((_, gi) => {
                 const x = getParallelX(gi, groupSteps.length);
@@ -163,7 +164,6 @@ export function FlowGraph({
                     stroke="var(--afr-connector, #e2e8f0)"
                     strokeWidth="2"
                     strokeLinecap="round"
-                    filter="url(#afr-glow)"
                   />
                 );
               })}
@@ -174,25 +174,7 @@ export function FlowGraph({
     } else {
       rendered.push(
         <div key={step.id} role="listitem" style={sequentialNodeStyle}>
-          {i > 0 && (
-            <svg
-              aria-hidden="true"
-              width="100%"
-              height={SEQ_CONNECTOR_H}
-              viewBox={`0 0 200 ${SEQ_CONNECTOR_H}`}
-              preserveAspectRatio="none"
-              style={{ flexShrink: 0, display: "block", overflow: "visible" }}
-            >
-              <path
-                d={`M100,0 L100,${SEQ_CONNECTOR_H}`}
-                fill="none"
-                stroke="var(--afr-connector, #e2e8f0)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                filter="url(#afr-glow)"
-              />
-            </svg>
-          )}
+          {i > 0 && <div aria-hidden="true" style={seqLineStyle} />}
           <StepNode
             step={step}
             isActive={isActive}
@@ -210,18 +192,6 @@ export function FlowGraph({
 
   return (
     <div ref={scrollRef} role="list" aria-label="Agent execution steps" style={flowGraphStyle}>
-      {/* Shared SVG filter definition — referenced by all connectors */}
-      <svg aria-hidden="true" width="0" height="0" style={{ position: "absolute" }}>
-        <defs>
-          <filter id="afr-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-      </svg>
       {rendered.length === 0 && <p style={emptyStateStyle}>Press Play to start the replay</p>}
       {rendered}
     </div>
@@ -316,31 +286,29 @@ const PARALLEL_CONNECTOR_H = 36;
 /** Compute the x position for the nth branch in a parallel group (0-200 viewBox) */
 function getParallelX(index: number, total: number): number {
   if (total === 1) return 100;
-  // Spread branches evenly across the viewBox, with padding from edges
   const pad = 20;
   return pad + (index * (200 - 2 * pad)) / (total - 1);
 }
 
-/** Build a fan-out path from center top to branch position */
+/** Fan-out path from center top (100,0) to branch position (x,h) */
 function fanOutPath(x: number, h: number): string {
-  // When the target is at center (x≈100), add a subtle S-curve so it's visible as a branch
-  if (Math.abs(x - 100) < 1) {
-    return `M100,0 C92,${h * 0.35} 108,${h * 0.65} ${x},${h}`;
-  }
+  if (Math.abs(x - 100) < 1) return `M100,0 L100,${h}`;
   return `M100,0 C100,${h * 0.6} ${x},${h * 0.4} ${x},${h}`;
 }
 
-/** Build a fan-in path from branch position to center bottom */
+/** Fan-in path from branch position (x,0) to center bottom (100,h) */
 function fanInPath(x: number, h: number): string {
-  if (Math.abs(x - 100) < 1) {
-    return `M${x},0 C108,${h * 0.35} 92,${h * 0.65} 100,${h}`;
-  }
+  if (Math.abs(x - 100) < 1) return `M100,0 L100,${h}`;
   return `M${x},0 C${x},${h * 0.6} 100,${h * 0.4} 100,${h}`;
 }
+
+/** CSS glow filter — used instead of SVG filter to avoid distortion with preserveAspectRatio="none" */
+const CONNECTOR_CSS_GLOW = "drop-shadow(0 0 3px var(--afr-connector, #e2e8f0))";
 
 // Inline styles
 const flowGraphStyle: React.CSSProperties = {
   flex: 1,
+  minHeight: 0,
   overflowY: "auto",
   padding: 24,
   display: "flex",
@@ -355,6 +323,15 @@ const emptyStateStyle: React.CSSProperties = {
   fontStyle: "italic",
   textAlign: "center",
   padding: "40px 20px",
+};
+
+const seqLineStyle: React.CSSProperties = {
+  width: 2,
+  height: SEQ_CONNECTOR_H,
+  background: "var(--afr-connector, #e2e8f0)",
+  flexShrink: 0,
+  borderRadius: 1,
+  filter: CONNECTOR_CSS_GLOW,
 };
 
 const sequentialNodeStyle: React.CSSProperties = {

@@ -121,7 +121,11 @@ function App() {
         {/* Main content: Splitter with flow graph + detail panel */}
         <div className="afr-demo-main">
           <Splitter style={{ width: "100%", height: "100%", border: "none" }}>
-            <SplitterPanel size={65} minSize={30} style={{ overflow: "hidden" }}>
+            <SplitterPanel
+              size={65}
+              minSize={30}
+              style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}
+            >
               <FlowGraph
                 steps={steps}
                 currentStepIndex={playback.currentStepIndex}
@@ -129,7 +133,11 @@ function App() {
                 onSelectStep={handleSelectStep}
               />
             </SplitterPanel>
-            <SplitterPanel size={35} minSize={20} style={{ overflow: "hidden" }}>
+            <SplitterPanel
+              size={35}
+              minSize={20}
+              style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}
+            >
               <DemoDetailPanel step={selectedStep} steps={steps} />
             </SplitterPanel>
           </Splitter>
